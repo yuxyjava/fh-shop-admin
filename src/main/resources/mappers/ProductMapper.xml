@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="com.fh.shop.admin.mapper.product.IProductMapper">
+
+	<sql id="productWhere">
+		<where>
+			<if test="productName!=null and productName != ''">
+				productname like concat('%',#{productName},'%')
+			</if>
+			<if test="brandId != null and brandId > 0">
+				and brandId = #{brandId}
+			</if>
+			<if test="minPrice != null and minPrice >= 0">
+				and price >= #{minPrice}
+			</if>
+			<if test="maxPrice != null and maxPrice >= minPrice">
+				and price &lt;=#{maxPrice}
+			</if>
+			<if test="minCreateDate != null">
+				and createDate >= #{minCreateDate}
+			</if>
+			<if test="maxCreateDate != null">
+				and createDate &lt;= #{maxCreateDate}
+			</if>
+		</where>
+	</sql>
+	
+<select id="findProductListCount" parameterType="com.fh.shop.admin.param.product.ProductSearchParam" resultType="long">
+	select count(*) from t_product p
+	left join t_brand b on p.brandId = b.id
+	<include refid="productWhere"></include>
+</select>
+	
+	<select id="findProductPageList" parameterType="com.fh.shop.admin.param.product.ProductSearchParam" resultType="com.fh.shop.admin.po.product.Product">
+		select t.* from
+		(
+		select p.id,productName,price "productPrice",createDate,status,brandName "brand.brandName" from t_product p
+		left join t_brand b on p.brandId = b.id
+		<include refid="productWhere"></include>
+		order by id desc
+		) t
+		limit #{start},#{length}
+	</select>
+
+
+</mapper>

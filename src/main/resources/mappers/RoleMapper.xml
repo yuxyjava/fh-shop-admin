@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="com.fh.shop.admin.mapper.role.IRoleMapper">
+	
+	
+<select id="findRoleList" resultType="com.fh.shop.admin.po.role.Role">
+	select id,roleName from t_role
+</select>
+	
+	<select id="findRoleCount" parameterType="com.fh.shop.admin.param.role.RoleSearchParam" resultType="long">
+		select count(*) from t_role
+	</select>
+
+	<select id="findPageList" parameterType="com.fh.shop.admin.param.role.RoleSearchParam" resultType="com.fh.shop.admin.po.role.Role">
+		select t.* from (select id,roleName from t_role
+		order by id desc) t
+		limit #{start},#{length}
+	</select>
+
+	<insert id="addRole" parameterType="com.fh.shop.admin.po.role.Role">
+		<selectKey keyProperty="id" resultType="long" order="AFTER">
+			select last_insert_id();
+		</selectKey>
+		insert into t_role (roleName) values (#{roleName})
+	</insert>
+	
+	<insert id="addRoleResource" >
+		insert into t_role_resource (roleid,resourceid) values
+		<foreach collection="list" item="roleResource" separator=",">
+			(#{roleResource.roleId},#{roleResource.resourceId})
+		</foreach>
+	</insert>
+	
+	<select id="findRole" parameterType="long" resultType="com.fh.shop.admin.po.role.Role">
+		select id,roleName from t_role where id=#{v}
+	</select>
+	
+	
+	<select id="findResourceIdList" parameterType="long" resultType="long">
+		select resourceid from t_role_resource where roleId=#{value}
+	</select>
+	
+	<update id="updateRole" parameterType="com.fh.shop.admin.po.role.Role">
+		update t_role set roleName=#{roleName} where id=#{id}
+	</update>
+
+	<delete id="deleteRoleResource" parameterType="long">
+		delete from t_role_resource where roleid=#{value}
+	</delete>
+
+</mapper>

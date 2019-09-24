@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+   
+<mapper namespace="com.fh.shop.admin.mapper.user.IUserMapper">
+	
+	
+	<insert id="addUserRole" parameterType="com.fh.shop.admin.po.user.UserRole">
+		insert into t_user_role (userId,roleid) values (#{userId},#{roleId})
+	</insert>
+	
+	
+	<insert id="addUser" parameterType="com.fh.shop.admin.po.user.User">
+		<selectKey keyProperty="id" resultType="long" order="AFTER">
+			select last_insert_id();
+		</selectKey>
+		insert INTO t_User (username,salt,realname,password,sex,age,salary,phone,email,entryTime)
+		values (#{userName},#{salt},#{realName},#{password},#{sex},#{age},#{salary},#{phone},#{email},#{entryTime})
+	</insert>
+
+	<sql id="userWhere">
+		<where>
+			<if test="userName != null and userName != ''">
+				username like concat('%',#{userName},'%')
+			</if>
+			<if test="realName != null and realName != ''">
+				and RealNaMe like concat('%',#{realName},'%')
+			</if>
+			<if test="minAge != null and minAge > 0">
+				and age >= #{minAge}
+			</if>
+			<if test="maxAge != null and maxAge >= minAge">
+				and age &lt;= #{maxAge}
+			</if>
+			<if test="minSalary != null and minSalary > 0">
+				and salary >= #{minSalary}
+			</if>
+			<if test="maxSalary != null and maxSalary >= minSalary">
+				and salary &lt;= #{maxSalary}
+			</if>
+			<if test="minEntryTime != null">
+				and entryTime >= #{minEntryTime}
+			</if>
+			<if test="maxEntryTime != null">
+				and entryTime &lt;= #{maxEntryTime}
+			</if>
+			<if test="roleListSize>0">
+				and id in
+				(
+				select ur.userid from t_user_role ur where
+				ur.roleid in
+				<foreach collection="roleList" item="roleId" open="("  close=")"  separator=",">
+					#{roleId}
+				</foreach>
+				group by userid
+				having count(*) = #{roleListSize}
+				)
+			</if>
+
+
+		</where>
+	</sql>
+	
+	<delete id="deleteBatch">
+		delete from t_user where id
+		in
+		<foreach collection="list" open="(" close=")" item="id" separator=",">
+			#{id}
+		</foreach>
+	</delete>
+	
+	<select id="findUserTotalCount" parameterType="com.fh.shop.admin.param.user.UserSearchParam" resultType="long">
+		select count(*) from t_user
+		<include refid="userWhere"></include>
+	</select>
+	
+	<select id="findUserPageList" parameterType="com.fh.shop.admin.param.user.UserSearchParam" resultType="com.fh.shop.admin.po.user.User">
+		select t.* from (
+		select id,username,realname,password,sex,age,salary,phone,loginErrorCount,email,entryTime from t_user
+		<include refid="userWhere"></include>
+
+		order by id desc) t
+		limit #{start},#{length}
+	</select>
+	
+	<select id="findRoleNameList" parameterType="long" resultType="string">
+		select roleName from t_role r left join t_user_role ur on r.id=ur.roleid
+		where ur.userid=#{v}
+	</select>
+	
+	<select id="findRoleIdList" parameterType="long" resultType="int">
+		select roleId from  t_user_role ur
+		where ur.userid=#{v}
+	</select>
+
+	<delete id="deleteUser" parameterType="long">
+		delete from t_user where id=#{v}
+	</delete>
+
+	<select id="findUser" parameterType="long" resultType="com.fh.shop.admin.po.user.User">
+		select id,username,realname,password,sex,age,salary,phone,email,salt,entryTime from t_user where id=#{v}
+	</select>
+	
+	<update id="updateUser" parameterType="com.fh.shop.admin.po.user.User">
+		update t_user set
+		username=#{userName},realname=#{realName},
+		sex=#{sex},age=#{age},salary=#{salary},phone=#{phone},
+		email=#{email},entryTime=#{entryTime}
+		where id=#{id}
+	</update>
+	
+	<delete id="deleteUserRole" parameterType="long">
+		delete from t_user_role where userid=#{value}
+	</delete>
+
+	<delete id="deleteUserRoles">
+		delete from t_user_role where userId in
+		<foreach collection="list" separator="," open="(" close=")" item="uid">
+			#{uid}
+		</foreach>
+	</delete>
+	
+	
+	<select id="findUserByUserName" parameterType="string" resultType="com.fh.shop.admin.po.user.User">
+		select id,username,salt,loginTime,loginCount,loginErrorCount,loginErrorDate,realname,password,sex,age,salary,phone,email,entryTime
+		from t_user
+		where userName = #{v}
+	</select>
+	
+	<update id="updateLoginTime">
+		update t_user set loginTime=#{currDate} where id=#{id}
+	</update>
+	
+	<update id="updateLoginErrorInfo">
+		update t_user set loginErrorDate=#{currDate},loginErrorCount=loginErrorCount+1 where id=#{userId}
+	</update>
+	
+	<update id="resetLoginErrorInfo">
+		update t_user set loginErrorDate=#{currDate},loginErrorCount=1 where id=#{userId}
+	</update>
+
+	<update id="updateLoginCount" parameterType="long">
+		update t_user set loginCount=loginCount+1 where id=#{v}
+	</update>
+	
+	<update id="resetLoginCount" parameterType="long">
+		update t_user set loginCount=1 where id=#{v}
+	</update>
+
+	<update id="resetLoginErrorCount" parameterType="long">
+		update t_user set loginErrorCount=0 where id=#{v}
+	</update>
+
+	<update id="updateUserStatus" parameterType="long">
+		update t_user set loginErrorCount=0 where id=#{v}
+	</update>
+	
+	<update id="updatePassword" parameterType="com.fh.shop.admin.param.user.UserPasswordParam">
+		update t_user set password=#{newPassword} where id=#{userId}
+	</update>
+	
+	<update id="resetUserPassword">
+		update t_user set password=#{password} where id=#{id}
+	</update>
+
+
+	<select id="findUserByMail" parameterType="string" resultType="com.fh.shop.admin.po.user.User">
+		select id,username,salt,loginTime,loginCount,loginErrorCount,loginErrorDate,realname,password,sex,age,salary,phone,email,entryTime
+		from t_user
+		where email = #{v}
+	</select>
+	
+
+</mapper>
