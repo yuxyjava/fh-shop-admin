@@ -15,7 +15,7 @@
 用户名:<input type="text" id="userName">
 密码:<input type="text" id="userPwd">
 <input type="button" value="登录" onclick="login();">
-<input type="button" value="忘记密码" onclick="toFindPassword();">
+<input type="button" value="忘记密码1111" onclick="toFindPassword();">
 <input type="reset" value="重置">
 </form>
 
